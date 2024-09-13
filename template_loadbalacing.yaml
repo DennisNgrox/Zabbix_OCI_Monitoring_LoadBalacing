@@ -1,0 +1,58 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 43d0fe04c7094000829b0d28c6e3470c
+      name: 'Custom Templates'
+  templates:
+    - uuid: f8f9716064994640b4e97c5db8fe0c8f
+      template: 'Oracle Cloud Load Balacing by HTTP'
+      name: 'Oracle Cloud Load Balacing by HTTP'
+      groups:
+        - name: 'Custom Templates'
+      items:
+        - uuid: e9aa39cc8ddf45b48d40f4b5302fa03d
+          name: 'LoadBalacing Get'
+          type: EXTERNAL
+          key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING}]'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: ee16247fa2cd4af69a9a6251bbbb5727
+          name: 'LoadBalacing Health Check'
+          type: DEPENDENT
+          key: load.balacing.healthCheck
+          delay: '0'
+          enabled_lifetime_type: DISABLE_AFTER
+          enabled_lifetime: 1h
+          item_prototypes:
+            - uuid: 7f3501843cfd448b85cbe3a13bd538d4
+              name: 'Health Check Load Balacing Name: {#LOAD_NAME}: BackEnd {#LOAD_BACKEND_NAME}'
+              type: EXTERNAL
+              key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#LOAD_BACKEND_NAME}]'
+              delay: 3m
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $..Status
+                - type: REGEX
+                  parameters:
+                    - '\["(.*?)"\]'
+                    - \1
+              trigger_prototypes:
+                - uuid: e360fe7257b34ca78203e22bf1dc9c19
+                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#LOAD_BACKEND_NAME}],,"like","CRITICAL")=1'
+                  name: 'LoadBalancer {#LOAD_NAME} : Backend {#LOAD_BACKEND_NAME} - Status: {ITEM.VALUE}'
+                  priority: HIGH
+                  description: 'Alarm Health Check backend Loadbalacing'
+                  manual_close: 'YES'
+          master_item:
+            key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING}]'
+          lld_macro_paths:
+            - lld_macro: '{#LOAD_BACKEND_NAME}'
+              path: $.BackendSet
+            - lld_macro: '{#LOAD_NAME}'
+              path: $.LoadBalancer
+      macros:
+        - macro: '{$OID_COMPARTMENT_LOADBALANCING}'
