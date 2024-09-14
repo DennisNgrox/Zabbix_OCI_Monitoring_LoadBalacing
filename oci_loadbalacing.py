@@ -1,6 +1,8 @@
 # Desenvolvido por: Dennis da Silva
 # https://github.com/DennisNgrox/Zabbix_OCI_Monitoring_LoadBalacing
 
+#!/bin/python3
+
 import oci
 import json
 import sys
