@@ -20,13 +20,13 @@ config = {
 lb_client = oci.load_balancer.LoadBalancerClient(config)
 
 
-def main(compartment_id, backend_set_name_filter=None):
+def main(compartment_id, backend_name_filter=None):
     try:
         # Listar todos os Load Balancers no compartimento
         load_balancers_response = lb_client.list_load_balancers(compartment_id)
         load_balancers = load_balancers_response.data
 
-        # dict para armazenar os resultados
+        # Dicionário para armazenar os resultados
         output_data = []
 
         # Iterar sobre os Load Balancers
@@ -39,9 +39,6 @@ def main(compartment_id, backend_set_name_filter=None):
 
             # Iterar sobre os Backend Sets
             for backend_set_name, backend_set in lb_details.backend_sets.items():
-                # Verificar se o Backend Set é o que estamos procurando
-                if backend_set_name_filter and backend_set_name != backend_set_name_filter:
-                    continue  # Ignorar se não corresponder ao filtro
 
                 # Obter detalhes do Backend Set
                 backend_set_details = lb_client.get_backend_set(
@@ -52,6 +49,12 @@ def main(compartment_id, backend_set_name_filter=None):
                 # Iterar sobre os backends do Backend Set
                 for backend in backend_set_details.backends:
                     backend_name = backend.name
+                    backend_ip_address = backend.ip_address  # Pegando o endereço IP do backend
+
+                    # Verificar se o Backend Name é o que estamos procurando
+                    if backend_name_filter and backend_name != backend_name_filter:
+                        continue  # Ignorar se não corresponder ao filtro
+
                     try:
                         # Obter o status de saúde dos backends para o Backend Set
                         backend_health_response = lb_client.get_backend_health(
@@ -63,10 +66,13 @@ def main(compartment_id, backend_set_name_filter=None):
                         # Obter o status geral dos Health Checks
                         health_check_results = backend_health_response.data.health_check_results
                         health_check_status = backend_health_response.data.status
-                        # Adicionar o Load Balancer, Backend Set e status ao resultado final
+
+                        # Adicionar o Load Balancer, Backend Set, status e o endereço IP ao resultado final
                         output_data.append({
                             "LoadBalancer": lb_name,
                             "BackendSet": backend_set_name,
+                            "BackendName": backend_name,
+                            "BackendIPAddress": backend_ip_address,  # Adicionando o IP do backend
                             "Status": health_check_status
                         })
 
@@ -83,10 +89,10 @@ def main(compartment_id, backend_set_name_filter=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python script.py <compartment_id> [backend_set_name]")
+        print("Usage: python script.py <compartment_id> [backend_name]")
         sys.exit(1)
 
     compartment_id = sys.argv[1]
-    backend_set_name_filter = sys.argv[2] if len(sys.argv) > 2 else None
+    backend_name_filter = sys.argv[2] if len(sys.argv) > 2 else None
 
-    main(compartment_id, backend_set_name_filter)
+    main(compartment_id, backend_name_filter)
