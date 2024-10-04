@@ -26,9 +26,9 @@ zabbix_export:
           enabled_lifetime: 1h
           item_prototypes:
             - uuid: 7f3501843cfd448b85cbe3a13bd538d4
-              name: 'Health Check Load Balacing Name: {#LOAD_NAME}: BackEnd {#LOAD_BACKEND_NAME}'
+              name: 'Health Check Load Balacing Host: {#HOST_BACKEND} BackEnd {#LOAD_BACKEND_NAME}'
               type: EXTERNAL
-              key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#LOAD_BACKEND_NAME}]'
+              key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#HOST_BACKEND}]'
               delay: 3m
               value_type: TEXT
               trends: '0'
@@ -40,16 +40,40 @@ zabbix_export:
                   parameters:
                     - '\["(.*?)"\]'
                     - \1
+                - type: STR_REPLACE
+                  parameters:
+                    - '"'
+                    - ''
               trigger_prototypes:
-                - uuid: e360fe7257b34ca78203e22bf1dc9c19
-                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#LOAD_BACKEND_NAME}],,"like","CRITICAL")=1'
+                - uuid: 9e5acf3deb124ac18a8ab8587fc8f29e
+                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#HOST_BACKEND}],,"like","PENDING")=1'
                   name: 'LoadBalancer {#LOAD_NAME} : Backend {#LOAD_BACKEND_NAME} - Status: {ITEM.VALUE}'
+                  priority: HIGH
+                  description: 'Alarm Health Check backend Loadbalacing'
+                  manual_close: 'YES'
+                - uuid: 6dcb9f2afc5b4d01a40053c0c8abab48
+                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#HOST_BACKEND}],,"like","WARNING")=1'
+                  name: 'LoadBalancer {#LOAD_NAME} : Backend {#LOAD_BACKEND_NAME} - Status: {ITEM.VALUE}'
+                  priority: HIGH
+                  description: 'Alarm Health Check backend Loadbalacing'
+                  manual_close: 'YES'
+                - uuid: e360fe7257b34ca78203e22bf1dc9c19
+                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#HOST_BACKEND}],,"like","CRITICAL")=1'
+                  name: 'LoadBalancer {#LOAD_NAME} : Backend {#LOAD_BACKEND_NAME} - {#HOST_BACKEND} - Status: {ITEM.VALUE}'
+                  priority: HIGH
+                  description: 'Alarm Health Check backend Loadbalacing'
+                  manual_close: 'YES'
+                - uuid: f3efb44c5a9547389d575c5b2b4745ba
+                  expression: 'find(/Oracle Cloud Load Balacing by HTTP/oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING},{#HOST_BACKEND}],,"like","INCOMPLETE")=1'
+                  name: 'LoadBalancer {#LOAD_NAME} : Backend {#LOAD_BACKEND_NAME} - {#HOST_BACKEND} - Status: {ITEM.VALUE}'
                   priority: HIGH
                   description: 'Alarm Health Check backend Loadbalacing'
                   manual_close: 'YES'
           master_item:
             key: 'oci_loadbalacing.py[{$OID_COMPARTMENT_LOADBALANCING}]'
           lld_macro_paths:
+            - lld_macro: '{#HOST_BACKEND}'
+              path: $.BackendName
             - lld_macro: '{#LOAD_BACKEND_NAME}'
               path: $.BackendSet
             - lld_macro: '{#LOAD_NAME}'
