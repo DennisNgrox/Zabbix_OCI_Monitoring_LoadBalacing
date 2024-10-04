@@ -69,6 +69,6 @@ Esses valores são para realizar a conexão na OCI (Oracle Cloud)
 
 Para testar o script através da linha de comando:
 ```
-python3 oci_loadbalacing.py <id_compartment> <backend_set_name> 
+python3 oci_loadbalacing.py <id_compartment> <backend_name_filter> 
 ```
 Se definir o backend_set_name o script buscará informações apenas desse backend em específico se não definir nenhum backend_set_name, o script trará o resultado de todos.
